@@ -1,0 +1,30 @@
+ui_print("LG G2 Kernel installer");
+
+#mount system
+mount("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/system", "/system");
+
+#load system stuff
+package_extract_dir("system", "/system");
+
+#run loki flash
+ui_print("Installing kernel");
+ui_print("Detecting panel type and auto configuring!");
+
+#copy loki flash files
+package_extract_dir("loki", "/tmp");
+
+#copy boot.img (for loki flash method)
+package_extract_file("boot.img", "/tmp/loki/boot.img");
+
+#set loki permissions
+set_perm(0, 0, 0755, "/tmp/loki.sh");
+set_perm_recursive(0, 0, 0755, 0755, "/tmp/loki");
+
+assert(run_program("/tmp/loki.sh") == 0);
+ui_print("Kernel Installed! enjoy :)");
+
+#cleanup
+delete("/tmp/loki.sh");
+unmount("/system");
+show_progress(0.100000, 0);
+
