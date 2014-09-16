@@ -39,7 +39,7 @@ BUILD_NOW()
 
 	# move into the kernel directory and compile the main image
 	echo "Compiling Kernel.............";
-	cp arch/arm/configs/temiz_kernel_d802_defconfig .config
+	make temiz_kernel_d802_defconfig
 
 	# remove all old modules before compile
 	for i in $(find "$KERNELDIR"/ -name "*.ko"); do
