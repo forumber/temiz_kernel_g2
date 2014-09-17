@@ -12,6 +12,12 @@ clear
 
 # Structure for building and using this script
 
+# fix python
+if [ -e /usr/bin/python3 ]; then
+	rm /usr/bin/python
+	ln -s /usr/bin/python2.7 /usr/bin/python
+fi;
+
 # location
 KERNELDIR=$(readlink -f .);
 export PATH=$PATH:tools/lz4demo
@@ -21,6 +27,7 @@ echo "Initialising................."
 rm -rf "$KERNELDIR"/READY-KERNEL/boot
 rm -f "$KERNELDIR"/READY-KERNEL/*.zip
 rm -f "$KERNELDIR"/READY-KERNEL/*.img
+rm -f "$KERNELDIR"/READY-KERNEL/system/lib/modules/*.ko
 mkdir -p "$KERNELDIR"/READY-KERNEL/boot
 
 # force regeneration of .dtb and zImage files for every compile
@@ -32,12 +39,7 @@ rm -f arch/arm/boot/Image
 
 BUILD_NOW()
 {
-	if [ -e /usr/bin/python3 ]; then
-		rm /usr/bin/python
-		ln -s /usr/bin/python2.7 /usr/bin/python
-	fi;
 
-	# move into the kernel directory and compile the main image
 	echo "Compiling Kernel.............";
 	make temiz_kernel_d802_defconfig
 
@@ -62,34 +64,38 @@ BUILD_NOW()
 	fi;
 
 	# build zImage
-	time make -j ${NR_CPUS}
-
-	stat "$KERNELDIR"/arch/arm/boot/zImage || exit 1;
+	make -j ${NR_CPUS}
 
 	# compile the modules, and depmod to create the final zImage
 	echo "Compiling Modules............"
-	time make modules -j ${NR_CPUS} || exit 1
+	make modules -j ${NR_CPUS}
 
 	# move the compiled zImage and modules into the READY-KERNEL working directory
 	echo "Move compiled objects........"
 
 	for i in $(find "$KERNELDIR" -name '*.ko'); do
-		cp -av "$i" "$KERNELDIR"/READY-KERNEL/modules/;
+		cp -av "$i" "$KERNELDIR"/READY-KERNEL/system/lib/modules/;
 	done;
 
-	chmod 755 "$KERNELDIR"/READY-KERNEL/modules/*
+	chmod 755 "$KERNELDIR"/READY-KERNEL/system/lib/modules/*
 
-	# remove empty directory placeholders from tmp-initramfs
-	for i in $(find ../ramdisk/ -name EMPTY_DIRECTORY); do
+	# remove empty directory placeholders from modules
+	for i in $(find ./READY-KERNEL/ -name EMPTY_DIRECTORY); do
 		rm -f "$i";
 	done;
+
+	# remove empty directory placeholders from tmp-initramfs
+	for i in $(find ./ramdisk/ -name EMPTY_DIRECTORY); do
+		rm -f "$i";
+	done;
+
 
 	if [ -e "$KERNELDIR"/arch/arm/boot/zImage ]; then
 		cp arch/arm/boot/zImage READY-KERNEL/boot
 
 		# create the ramdisk and move it to the output working directory
 		echo "Create ramdisk..............."
-		scripts/mkbootfs ../ramdisk | gzip > ramdisk.gz 2>/dev/null
+		./scripts/mkbootfs ./ramdisk | gzip > ramdisk.gz 2>/dev/null
 		mv ramdisk.gz READY-KERNEL/boot
 
 		# create the dt.img from the compiled device files, necessary for msm8974 boot images
@@ -124,17 +130,25 @@ BUILD_NOW()
 	fi;
 }
 
-BUILD_NOW;
-
 CLEAN_KERNEL()
 {
-	# fix python
-	if [ -e /usr/bin/python3 ]; then
-		rm /usr/bin/python
-		ln -s /usr/bin/python2.7 /usr/bin/python
-	fi;
-
 	make ARCH=arm mrproper;
 	make clean;
-
 }
+
+echo "Make the kernel, or clean the tree?";
+select CHOICE in make clean fresh_make; do
+	case "$CHOICE" in
+		"make")
+			BUILD_NOW;
+			break;;
+		"clean")
+			CLEAN_KERNEL;
+			break;;
+		"fresh_make")
+			CLEAN_KERNEL;
+			BUILD_NOW;
+			break;;
+	esac;
+done;
+
