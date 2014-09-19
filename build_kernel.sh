@@ -24,11 +24,6 @@ export PATH=$PATH:tools/lz4demo
 
 # begin by ensuring the required directory structure is complete, and empty
 echo "Initialising................."
-rm -rf "$KERNELDIR"/READY-KERNEL/boot
-rm -f "$KERNELDIR"/READY-KERNEL/*.zip
-rm -f "$KERNELDIR"/READY-KERNEL/*.img
-rm -f "$KERNELDIR"/READY-KERNEL/system/lib/modules/*.ko
-mkdir -p "$KERNELDIR"/READY-KERNEL/boot
 
 # force regeneration of .dtb and zImage files for every compile
 rm -f arch/arm/boot/*.dtb
@@ -36,10 +31,13 @@ rm -f arch/arm/boot/*.cmd
 rm -f arch/arm/boot/zImage
 rm -f arch/arm/boot/Image
 
+# Copy needed dtc binary to system to finish the build.
+if [ ! -e /bin/dtc ]; then
+	cp -a tools/dtc-binary/dtc /bin/;
+fi;
 
 BUILD_NOW()
 {
-
 	echo "Compiling Kernel.............";
 	make temiz_kernel_d802_defconfig
 
@@ -47,11 +45,6 @@ BUILD_NOW()
 	for i in $(find "$KERNELDIR"/ -name "*.ko"); do
 		rm -f "$i";
 	done;
-
-	# Copy needed dtc binary to system to finish the build.
-	if [ ! -e /bin/dtc ]; then
-		cp -a tools/dtc-binary/dtc /bin/;
-	fi;
 
 	# Idea by savoca
 	NR_CPUS=$(grep -c ^processor /proc/cpuinfo)
@@ -70,42 +63,44 @@ BUILD_NOW()
 	echo "Compiling Modules............"
 	make modules -j ${NR_CPUS}
 
-	# move the compiled zImage and modules into the READY-KERNEL working directory
-	echo "Move compiled objects........"
-
-	for i in $(find "$KERNELDIR" -name '*.ko'); do
-		cp -av "$i" "$KERNELDIR"/READY-KERNEL/system/lib/modules/;
-	done;
-
-	chmod 755 "$KERNELDIR"/READY-KERNEL/system/lib/modules/*
-
-	# remove empty directory placeholders from modules
-	for i in $(find ./READY-KERNEL/ -name EMPTY_DIRECTORY); do
-		rm -f "$i";
-	done;
-
-	# remove empty directory placeholders from tmp-initramfs
-	for i in $(find ./ramdisk/ -name EMPTY_DIRECTORY); do
-		rm -f "$i";
-	done;
-
-
 	if [ -e "$KERNELDIR"/arch/arm/boot/zImage ]; then
-		cp arch/arm/boot/zImage READY-KERNEL/boot
+		cp -r ./ramdisk ./ramdisk_tmp
+		cp -r ./READY-KERNEL ./READY-KERNEL_tmp
+	    
+		# move the compiled zImage and modules into the READY-KERNEL_tmp working directory
+		echo "Move compiled objects........"
+
+		for i in $(find "$KERNELDIR" -name '*.ko'); do
+			cp -av "$i" "$KERNELDIR"/READY-KERNEL_tmp/system/lib/modules/;
+		done;
+
+		chmod 755 "$KERNELDIR"/READY-KERNEL_tmp/system/lib/modules/*
+
+		# remove empty directory placeholders from modules
+		for i in $(find ./READY-KERNEL_tmp/ -name EMPTY_DIRECTORY); do
+			rm -f "$i";
+		done;
+
+		# remove empty directory placeholders from tmp-initramfs
+		for i in $(find ./ramdisk_tmp/ -name EMPTY_DIRECTORY); do
+			rm -f "$i";
+		done;
+
+		cp arch/arm/boot/zImage READY-KERNEL_tmp/boot
 
 		# create the ramdisk and move it to the output working directory
 		echo "Create ramdisk..............."
-		./scripts/mkbootfs ./ramdisk | gzip > ramdisk.gz 2>/dev/null
-		mv ramdisk.gz READY-KERNEL/boot
+		./scripts/mkbootfs ./ramdisk_tmp | gzip > ramdisk.gz 2>/dev/null
+		mv ramdisk.gz READY-KERNEL_tmp/boot
 
 		# create the dt.img from the compiled device files, necessary for msm8974 boot images
 		echo "Create dt.img................"
-		./scripts/dtbTool -v -s 2048 -o READY-KERNEL/boot/dt.img arch/arm/boot/
+		./scripts/dtbTool -v -s 2048 -o READY-KERNEL_tmp/boot/dt.img arch/arm/boot/
 
 		# build the final boot.img ready for inclusion in flashable zip
 		echo "Build boot.img..............."
-		cp scripts/mkbootimg READY-KERNEL/boot
-		cd READY-KERNEL/boot
+		cp scripts/mkbootimg READY-KERNEL_tmp/boot
+		cd READY-KERNEL_tmp/boot
 		base=0x00000000
 		offset=0x05000000
 		tags_addr=0x04800000
@@ -121,9 +116,10 @@ BUILD_NOW()
 		# create the flashable zip file from the contents of the output directory
 		echo "Make flashable zip..........."
 		zip -r Kernel-tests.zip * >/dev/null
-		stat boot.img
-		rm -f ./*.img
+		cp Kernel-tests.zip ../Kernel-tests.zip
 		cd ..
+		rm -rf READY-KERNEL_tmp
+		rm -rf ramdisk_tmp
 	else
 		# with red-color
 		echo -e "\e[1;31mKernel STUCK in BUILD! no zImage exist\e[m"
