@@ -33,9 +33,8 @@ on early-init
 
 # import cne init file
 on post-fs
-# LGE_CHANGE_S, [LGE_DATA][LPP_UPLUS_DATA_TCPIP_NSRM], heeyeon.nah@lge.com, 2012-05-22
     export LD_PRELOAD /vendor/lib/libNimsWrap.so
-# LGE_CHANGE_E, [LGE_DATA][LPP_UPLUS_DATA_TCPIP_NSRM], heeyeon.nah@lge.com, 2012-05-22
+
 on fs
     # Keeping following partitions outside fstab file. As user may not have
     # these partition flashed on the device. Failure to mount any partition in fstab file
@@ -51,10 +50,6 @@ on fs
     mount vfat /dev/block/platform/msm_sdcc.1/by-name/modem /firmware ro shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337
     write /sys/kernel/boot_adsp/boot 1
 
-#on boot
-#   write /sys/devices/i2c-3/3-0024/cyttsp_update_fw 1
-#   write /sys/devices/i2c-3/3-005b/update_fw 1
-#   start qcamerasvr
 
 on post-fs-data
     mkdir /data/tombstones 0775 system system
@@ -63,11 +58,8 @@ on post-fs-data
     mkdir /tombstones/wcnss 0771 system system
     mkdir /tombstones/dsps 0771 system system
 
-# LGE_CHANGE_START, 2013/04/18, G2-Task-Sensor@lge.com
     mkdir /sns/cal/ 0644 system system
-# LGE_CHANGE_END
 
-# LGE_CHANGE_S, [G2_Player][haewook.kim@lge.com], 20130301, for DivxDrm
     mkdir /persist-lg/multimedia 0770 media divxdrm
     chown media divxdrm /persist-lg/multimedia
     chmod 0770 /persist-lg/multimedia
@@ -87,16 +79,9 @@ on post-fs-data
     mkdir /persist-lg/multimedia/scnt/sdadf 0770 media divxdrm
     chown media divxdrm /persist-lg/multimedia/scnt/sdadf
     chmod 0770 /persist-lg/multimedia/scnt/sdadf
-# LGE_CHANGE_E, [G2_Player][haewook.kim@lge.com], 20130301, for DivxDrm
 
-# LGE_CHANGE_S for MLT
     chown system system /mpt
     chmod 0775 /mpt
-# LGE_CHANGE_E for MLT
-
-#on chargerlogo
-#    stop bootlogo
-#    exec /sbin/chargerlogo
 
 on boot
     start imsqmidaemon
@@ -231,13 +216,6 @@ service atd /system/bin/atd /dev/ttyGS0 /dev/smd0
 on property:ro.baseband="msm"
    start atd
 
-#CAPP_READAHEAD_BOOT_IMPROVE
-#service preload /system/bin/treadahead -f
-#   disabled
-#   oneshot
-#
-#on boot
-#   start preload
     
 service usf_p2p /system/bin/usf_p2p
     user system
