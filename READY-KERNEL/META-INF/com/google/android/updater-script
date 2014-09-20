@@ -4,6 +4,10 @@ ui_print("LG G2 Kernel installer");
 mount("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/system", "/system");
 delete_recursive("/system/lib/modules");
 package_extract_dir("system", "/system");
+set_metadata("/system/etc/thermal-engine-8974.conf", "uid", 0, "gid", 0, "mode", 0755, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
+set_metadata("/system/etc/thermal-engine-8974-default.conf", "uid", 0, "gid", 0, "mode", 0755, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
+set_metadata("/system/etc/thermal-engine-8974-ftm.conf", "uid", 0, "gid", 0, "mode", 0755, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
+set_metadata("/system/etc/audio_policy.conf", "uid", 0, "gid", 0, "mode", 0755, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
 
 #run loki flash
 ui_print("Installing kernel");
