@@ -1,5 +1,3 @@
-ui_print("LG G2 Kernel installer");
-
 # install modules
 mount("ext4", "EMMC", "/dev/block/platform/msm_sdcc.1/by-name/system", "/system");
 delete_recursive("/system/lib/modules");
@@ -8,10 +6,6 @@ set_metadata("/system/etc/thermal-engine-8974.conf", "uid", 0, "gid", 0, "mode",
 set_metadata("/system/etc/thermal-engine-8974-default.conf", "uid", 0, "gid", 0, "mode", 0755, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
 set_metadata("/system/etc/thermal-engine-8974-ftm.conf", "uid", 0, "gid", 0, "mode", 0755, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
 set_metadata("/system/etc/audio_policy.conf", "uid", 0, "gid", 0, "mode", 0755, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
-
-#run loki flash
-ui_print("Installing kernel");
-ui_print("Detecting panel type and auto configuring!");
 
 #copy loki flash files
 package_extract_dir("loki", "/tmp");
@@ -24,7 +18,6 @@ set_perm(0, 0, 0755, "/tmp/loki.sh");
 set_perm_recursive(0, 0, 0755, 0755, "/tmp/loki");
 
 assert(run_program("/tmp/loki.sh") == 0);
-ui_print("Kernel Installed! enjoy :)");
 
 #cleanup
 delete("/tmp/loki.sh");
