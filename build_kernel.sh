@@ -59,13 +59,13 @@ BUILD_NOW()
 	# build zImage
 	make -j ${NR_CPUS}
 
-	# compile the modules, and depmod to create the final zImage
-	echo "Compiling Modules............"
-	make modules -j ${NR_CPUS}
-
 	if [ -e "$KERNELDIR"/arch/arm/boot/zImage ]; then
 		cp -r ./ramdisk ./ramdisk_tmp
 		cp -r ./READY-KERNEL ./READY-KERNEL_tmp
+		
+		# compile the modules, and depmod to create the final zImage
+		echo "Compiling Modules............"
+		make modules -j ${NR_CPUS}
 	    
 		# move the compiled zImage and modules into the READY-KERNEL_tmp working directory
 		echo "Move compiled objects........"
