@@ -137,10 +137,5 @@ service recovery_write /sbin/write_recovery
     class main
     oneshot
 
-service rctd /system/bin/rctd
-    class late_start
-    user root
-    group root
-
 on property:sys.boot_completed=1
 	write sys/class/graphics/fb0/noti_boot 1

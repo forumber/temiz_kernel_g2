@@ -42,13 +42,6 @@ service ipsecstarter /system/bin/ipsecstarter
     user system
     group system net_admin net_raw
 
-service preloadcopy /system/bin/sh /preload_sl.sh
-    class main
-    user root
-    group media_rw system sdcard_rw
-    disabled
-    oneshot
-
 on property:ro.build.type=userdebug
     setprop sys.coredump 1
 
@@ -59,9 +52,6 @@ on post-fs-data
 # factory reset magic code
 on property:sys.factory=1
     exec /system/bin/dd if=/system/etc/factory_reset_magic of=/dev/block/platform/msm_sdcc.1/by-name/pad1 bs=512 count=1
-
-on property:persist.sys.emmc_size=0
-    start preloadcopy
 
 on fs
     mkdir /cust 0771 system system
